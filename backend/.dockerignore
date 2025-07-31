@@ -1,0 +1,9 @@
+node_modules
+.dockerignore
+.git
+.gitignore
+*.log
+.env
+.vscode
+npm-debug.log
+.DS_Store
