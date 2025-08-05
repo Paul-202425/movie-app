@@ -1,0 +1,9 @@
+.dark-mode-toggle {
+  position: fixed;
+  top: 10px;
+  left: 10px;
+  z-index: 1000;
+  background-color: white;
+  padding: 5px 10px;
+  border-radius: 8px;
+}

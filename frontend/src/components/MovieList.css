@@ -1,0 +1,61 @@
+.movie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  padding: 20px;
+}
+
+.movie-card {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+  color: #fff;
+  padding: 10px;
+}
+
+.poster {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.movie-info {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: center;
+  margin: 6px 0;
+}
+
+.star-button {
+  background: none;
+  border: none;
+  color: #bbb;
+  font-size: 16px;
+  margin: 0 2px;
+  cursor: pointer;
+}
+
+.star-button.active {
+  color: gold;
+}
+
+.favorite-toggle {
+  background-color: #333;
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 20px;
+  margin-top: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.favorite-toggle.fav {
+  background-color: gold;
+  color: black;
+}
