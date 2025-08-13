@@ -4,45 +4,50 @@ import './MovieModal.css';
 
 function MovieModal({ movie, onClose, isFavorite, toggleFavorite, setRating, rating }) {
   const [trailerUrl, setTrailerUrl] = useState('');
+  const [loadingTrailer, setLoadingTrailer] = useState(false);
 
   useEffect(() => {
     const fetchTrailer = async () => {
-      if (!movie) return;
+      if (!movie?.id) return;
+      setLoadingTrailer(true);
       try {
-        const response = await fetch(`/api/trailer/${movie.id}`);
-        const data = await response.json();
-        const trailer = data.results.find(
-          (video) => video.type === 'Trailer' && video.site === 'YouTube'
-        );
-        setTrailerUrl(trailer ? `https://www.youtube.com/embed/${trailer.key}` : '');
-      } catch (error) {
-        console.error('Error fetching trailer:', error);
+        const res = await fetch(`/api/trailer/${movie.id}`);
+        const data = await res.json();
+        const key = data?.trailer?.key || null;
+        setTrailerUrl(key ? `https://www.youtube.com/embed/${key}` : '');
+      } catch (err) {
+        console.error('Error fetching trailer:', err);
+        setTrailerUrl('');
+      } finally {
+        setLoadingTrailer(false);
       }
     };
-
     fetchTrailer();
-  }, [movie]);
+  }, [movie?.id]);
 
   if (!movie) return null;
 
   return (
     <div className="modal-overlay">
       <div className="modal-content dark">
-        <button className="close-button" onClick={onClose}>
-          ✖
-        </button>
+        <button className="close-button" onClick={onClose} aria-label="Close">✖</button>
+
         <h2>{movie.title}</h2>
         <p>{movie.overview}</p>
 
-        {trailerUrl ? (
+        {loadingTrailer ? (
+          <p className="no-trailer" style={{ opacity: 0.8 }}>Loading trailer…</p>
+        ) : trailerUrl ? (
           <iframe
-            width="100%"
-            height="315"
-            src={trailerUrl}
             title="YouTube trailer"
+            width="100%"
+            height="360"
+            src={trailerUrl}
             frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
-          ></iframe>
+            style={{ borderRadius: '12px' }}
+          />
         ) : (
           <p className="no-trailer">Trailer not available</p>
         )}
@@ -59,6 +64,8 @@ function MovieModal({ movie, onClose, isFavorite, toggleFavorite, setRating, rat
                 key={star}
                 className={`star ${rating >= star ? 'selected' : ''}`}
                 onClick={() => setRating(movie.id, star)}
+                role="button"
+                aria-label={`Rate ${star} star${star > 1 ? 's' : ''}`}
               >
                 ★
               </span>
