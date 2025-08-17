@@ -1,0 +1,31 @@
+# Dependencies
+node_modules
+npm-debug.log
+yarn.lock
+package-lock.json
+
+# Logs
+*.log
+logs
+debug.log
+
+# Build artifacts
+dist
+build
+coverage
+
+# Git & configs
+.git
+.gitignore
+Dockerfile*
+.dockerignore
+
+# Environment / secrets
+.env
+*.env
+
+# IDE / editor
+.vscode
+.idea
+*.swp
+.DS_Store

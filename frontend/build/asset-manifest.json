@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/Paul-202425/movie-app/static/css/main.74e7b68f.css",
+    "main.js": "/Paul-202425/movie-app/static/js/main.6430ca09.js",
+    "static/js/488.3ddb654a.chunk.js": "/Paul-202425/movie-app/static/js/488.3ddb654a.chunk.js",
+    "index.html": "/Paul-202425/movie-app/index.html",
+    "main.74e7b68f.css.map": "/Paul-202425/movie-app/static/css/main.74e7b68f.css.map",
+    "main.6430ca09.js.map": "/Paul-202425/movie-app/static/js/main.6430ca09.js.map",
+    "488.3ddb654a.chunk.js.map": "/Paul-202425/movie-app/static/js/488.3ddb654a.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.74e7b68f.css",
+    "static/js/main.6430ca09.js"
+  ]
+}

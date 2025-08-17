@@ -1,169 +1,130 @@
+# <Movie-App> — Deployment (Part Two A/B)
+# Movie Explorer — React + Node/Express + HAProxy (Docker)
+
+Discover trending movies, search titles, watch trailers, rate, and save favorites.  
+Frontend: React (served by Nginx). Backend: Node/Express proxying TMDB API.  
+Deployed as two frontends + two backends behind HAProxy with health checks & round-robin.
+
+## Demo Video
+📽️ **2-minute demo:** <PASTE YOUR VIDEO LINK HERE>
+
+## Docker Hub Images
+- Backend: `docker.io/paul217/movie-app:v2` (also tag `latest` if desired)
+- Frontend: `docker.io/paul217/movie-frontend:v2` (also tag `latest` if desired)
+
+## External API + Credits
+- Data from **The Movie Database (TMDB)** API.  
+  - Docs: https://developer.themoviedb.org/  
+  - Please note TMDB’s attribution requirements.
+- API keys are **not** in the repo. The backend reads:
+  - `TMDB_BEARER` (preferred v4 token) **or** `TMDB_API_KEY` (v3)
+
 ---
 
-# 🎬 Movie App – Deployment & Load Balancer Setup
-
-## 📌 Overview
-
-The **Movie App** is a full-stack application that allows users to discover trending movies, search for titles, view trailers, rate movies, and save favorites. The backend integrates with **The Movie Database (TMDb)** API to fetch real-time movie data and trailers.
-
-This README explains the full deployment process across two web servers (**Web01** and **Web02**) with a load balancer (**Lb01**) using **HAProxy** for round-robin traffic distribution.
-
----
-
-## 🐳 1. Docker Image Details
-
-* **Docker Hub Repo:** [https://hub.docker.com/r/paul202425/movie-app](https://hub.docker.com/r/paul202425/movie-app)
-* **Image Name:** `movie-app`
-* **Tags:**
-
-  * `latest` (production build)
-  * `v1.0` (stable release)
+## Features (meets assignment “value” & interaction)
+- 🔎 Search movies (query to TMDB)
+- 🔥 Trending feed
+- 🎞️ Trailer selection (smart YouTube pick by type/official/recency)
+- ⭐ Favorites (persist to `localStorage`)
+- 🎚️ Ratings (persist to `localStorage`)
+- 🌙 Dark mode toggle
+- 🧑‍💻 (Bonus) Google login via Firebase (optional UI feature)
+- 🧯 Robust error states (network/API errors surfaced to user)
 
 ---
 
-## ⚙️ 2. Build Instructions
+## 1) Image Details
+- **Docker Hub**: `https://hub.docker.com/r/<paul217>/<movie-app>`
+- **Image name**: `<paul217>/<movie-app>`
+- **Tags**: `v1`, `latest`
 
-To build the Docker image locally from the project root:
-
+## 2) Build Locally
 ```bash
-# Build the image
-docker build -t paul202425/movie-app:latest .
-
-# Push to Docker Hub
-docker push paul202425/movie-app:latest
+# from repo root (contains Dockerfile)
+docker build -t <paul217>/<movie-app>:v1 .
+docker tag <paul217>/<movie-app>:v1 <paul217>/<movie-app>:latest
 ```
 
----
-
-## 🚀 3. Run Instructions (Web01 & Web02)
-
-On **both** Web01 and Web02:
-
+## 3) Run Locally (port 8080 by default)
 ```bash
-# Pull the latest image
-docker pull paul202425/movie-app:latest
+# with env file for secrets like API keys
+echo "PORT=8080" > .env
+echo "API_KEY=REDACTED" >> .env
 
-# Run the container
-docker run -d \
-  --name movie-app \
-  -p 80:80 \
-  -e TMDB_API_KEY=<your_tmdb_api_key> \
-  paul202425/movie-app:latest
+docker run --rm -it --env-file .env -p 8080:8080 <paul217>/<movie-app>:v1
+
+# test
+curl -i http://localhost:8080/health
+curl -i http://localhost:8080
 ```
 
-**Notes:**
+## 4) Push to Docker Hub
+```bash
+docker login
+docker push <paul217>/<movie-app>:v1
+docker push <paul217>/<movie-app>:latest
+```
 
-* `-p 80:80` maps the container's port 80 to the host's port 80.
-* `-e TMDB_API_KEY` injects the TMDb API key as an environment variable for security.
-* Replace `<your_tmdb_api_key>` with your actual API key.
-* Ensure firewall rules allow inbound traffic on port 80.
+## 5) Deploy on Lab Machines
+SSH into **web-01** and **web-02** and run:
+```bash
+docker pull <paul217>/<movie-app>:v1
 
----
+docker rm -f app || true
+docker run -d --name app --restart unless-stopped   --env PORT=8080   --env API_KEY=$API_KEY   -p 8080:8080   <paul217>/<movie-app>:v1
 
-## ⚖️ 4. Load Balancer Configuration (HAProxy on Lb01)
+# Optional: confirm service identity
+curl -s http://localhost:8080/health
+```
 
-Edit `/etc/haproxy/haproxy.cfg` on **Lb01**:
-
+## 6) Configure Load Balancer (HAProxy on lb-01)
+Update `/etc/haproxy/haproxy.cfg` with the **backend** below (full example in `haproxy.cfg.example`):
 ```haproxy
-frontend http_front
-    bind *:80
-    mode http
-    default_backend movie_backend
-
-backend movie_backend
-    mode http
-    balance roundrobin
-    server web01 <web01-private-ip>:80 check
-    server web02 <web02-private-ip>:80 check
+backend webapps
+  balance roundrobin
+  option httpchk GET /health
+  server web01 172.20.0.11:8080 check
+  server web02 172.20.0.12:8080 check
 ```
 
-**Replace `<web01-private-ip>` and `<web02-private-ip>`** with the actual internal/private IP addresses of Web01 and Web02.
-
-Reload HAProxy:
-
+Reload HAProxy (containerized):
 ```bash
-sudo systemctl reload haproxy
+docker exec -it lb-01 sh -lc 'haproxy -sf $(pidof haproxy) -f /etc/haproxy/haproxy.cfg'
 ```
 
----
-
-## 🧪 5. Testing the Load Balancer
-
-1. Open the load balancer’s public IP in your browser:
-
-   ```
-   http://<lb01-public-ip>
-   ```
-2. Refresh the page multiple times — requests should alternate between **Web01** and **Web02**.
-3. Check logs on each server:
-
-   ```bash
-   docker logs movie-app
-   ```
-
-   You should see incoming requests alternating between servers.
-
-**Expected Result:** Round-robin distribution of traffic between Web01 and Web02.
-
----
-
-## 🔐 6. Security & Secrets Handling
-
-To avoid baking secrets into the image:
-
-* Pass API keys via environment variables:
-
-  ```bash
-  docker run -d \
-    --env-file .env \
-    -p 80:80 \
-    paul202425/movie-app:latest
-  ```
-* Keep `.env` files out of Git (`.gitignore` them).
-* Use **Docker secrets** or cloud-based secret managers for production.
-
----
-
-## 📂 7. Project Structure
-
-```
-movie-app/
-├── backend/                 # Express.js API server
-│   ├── index.js              # Backend entry point
-│   └── .env                  # Environment variables (ignored in Git)
-├── frontend/                 # React frontend
-│   ├── src/                  # Components, pages, and assets
-│   ├── public/               # Static assets
-│   └── package.json
-├── dockerfile                # Docker build instructions
-├── docker-compose.yml        # Optional local dev config
-└── README.md                 # Deployment guide (this file)
+## 7) Test End-to-End
+From your host (or any node that can reach lb-01):
+```bash
+for i in {1..6}; do curl -s http://localhost | grep -E "instance|host|web"; done
 ```
 
----
+You should see responses alternate between **web-01** and **web-02**.
 
-## 📸 8. Evidence of Testing
+## 8) Evidence
+- Screenshot of `curl` loop alternating.
+- `docker ps` on web-01 and web-02 showing the `app` container.
+- HAProxy logs (optional): `docker logs lb-01 --tail=100`.
 
-**Example round-robin log output:**
+## 9) Hardening (Secrets)
+- Do **not** bake API keys into the image.
+- Pass with `--env` / `--env-file` or secrets manager.
+- Keep `.env` out of git via `.gitignore`.
 
-**Web01 logs:**
+## 10) Troubleshooting
+- Port in use: `sudo lsof -i :8080` or change `PORT`.
+- Healthcheck failing: ensure `/health` route responds `200` quickly.
+- Wrong backend IPs: verify `docker network inspect` to get web-01/web-02 addresses.
+- 502 from HAProxy: app not listening on `0.0.0.0:8080` (fix your server bind).
 
+## 11) Demo Video Script (≤ 2 minutes)
+1. Show `docker images` (your image present).
+2. `docker run -p 8080:8080 ...` locally & open `http://localhost:8080`.
+3. `docker push` to Docker Hub.
+4. On web-01/web-02: `docker pull` + `docker run` and `/health` check.
+5. Show `haproxy.cfg` snippet, then reload.
+6. Run `for i in {1..6}; do curl http://<lb-address>; done` to prove round-robin.
+7. Close on the app’s key feature (search/filter) and mention API credit.
 ```
-GET /api/trending 200
-GET /api/search?query=batman 200
-```
 
-**Web02 logs:**
-
-```
-GET /api/trending 200
-GET /api/search?query=batman 200
-```
-
----
-
-## ✅ Conclusion
-
-Your Movie App is now fully deployed and load-balanced between two servers using HAProxy. This setup ensures **high availability**, **scalability**, and **consistent performance**.
-
----
+## 12) API Attribution
+- **API**: <TMDB API> — Docs: <link>

@@ -80,6 +80,9 @@ async function getBestYouTubeVideo(movieId) {
 
 // ---- Routes ----
 
+// Health check (for HAProxy / k8s / monitors)
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
 app.get('/api/trending', async (_req, res) => {
   try {
     const { data } = await tmdb.get('/trending/movie/day');
