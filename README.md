@@ -6,7 +6,7 @@ Frontend: React (served by Nginx). Backend: Node/Express proxying TMDB API.
 Deployed as two frontends + two backends behind HAProxy with health checks & round-robin.
 
 ## Demo Video
-📽️ **2-minute demo:** <PASTE YOUR VIDEO LINK HERE>
+📽️ **2-minute demo:** < https://drive.google.com/file/d/1LFHB--mB3BUI9nGwlawc63W_XVkxh7bv/view?usp=sharing >
 
 ## Docker Hub Images
 - Backend: `docker.io/paul217/movie-app:v2` (also tag `latest` if desired)
